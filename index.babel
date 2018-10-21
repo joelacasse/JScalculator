@@ -1,0 +1,189 @@
+const initialized = {
+      decimal: false,
+      display: "0",
+      zeroAllow: false,
+};
+
+//Stateless functional component for display
+const Display = (props) => (<div id="display">{props.display}</div>)
+
+//Stateless functional component for controls
+const Controls = (props) => (
+      <button class="button" id={props.id} onClick={props.handleClick}>
+          {props.display}
+      </button>
+    )
+
+//Stateful class component to manage state
+class App extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = initialized;
+    this.handleNumber = this.handleNumber.bind(this);
+    this.handleDecimal = this.handleDecimal.bind(this);
+    this.handleOperator = this.handleOperator.bind(this);
+    this.handleClear = this.handleClear.bind(this);
+    this.handleEval = this.handleEval.bind(this);
+    this.handleKeyPress = this.handleKeyPress.bind(this);
+  }
+  
+  handleClear(){
+    this.setState(initialized);
+  }
+  
+  handleNumber(x){
+    let currDisplay = this.state.display;
+    let last = currDisplay.slice(-1); //last character on display
+    let most = currDisplay.slice(0,currDisplay.length-1); //everything but the last character
+    let reg = /[\+\-\/\*]/;
+
+    if(!this.state.zeroAllow){
+      if (last==="0"){
+      this.setState({display: most+x});
+      } else {
+      this.setState({zeroAllow: true});
+      this.setState({display: currDisplay+x});
+      }
+    } else {
+      this.setState({display: currDisplay+x});
+    }
+  }
+  
+  handleDecimal(x){
+    if(!this.state.decimal){
+        this.setState({display: this.state.display+x});
+        this.setState({decimal: true});
+        this.setState({zeroAllow: true});
+      }
+  }
+  
+  handleOperator(x){
+    let currDisplay = this.state.display;
+    let last = currDisplay.slice(-1); //last character on display
+    let most = currDisplay.slice(0,currDisplay.length-1); //everything but the last character
+    let reg = /[\+\-\/\*]/;
+    this.setState({decimal: false});
+    this.setState({zeroAllow: false});
+    if (reg.test(last)){
+      this.setState({display: most+x});
+    } else {
+      this.setState({display: currDisplay+x})
+    }
+  }
+  
+  handleEval(){
+    if(this.state.display ==="4815162342"){
+      this.setState({display: "accepted"});
+      setTimeout(this.handleClear, 2000);
+    } else {
+    this.setState({display: (Math.round(eval(this.state.display)*1000000)/1000000).toString()});
+    }
+  }
+  
+  componentDidMount() {
+    document.addEventListener("keydown", this.handleKeyPress)
+  }
+  
+  componentWillUnmount() {
+    document.removeEventListener("keydown",this.handleKeyPress);
+  }
+  
+  //foundation for adding keyboard functionality
+  handleKeyPress(event){
+    if(event.keyCode>47 && event.keyCode<58 && !event.shiftKey){
+        this.handleNumber((event.keyCode-48).toString());
+    } else if (event.shiftKey){
+      switch(event.keyCode){
+        case 187:
+          this.handleOperator("+")
+          break;
+        case 56:
+          this.handleOperator("*")
+          break;
+      }
+    } else {
+      switch(event.keyCode){
+        case 189:
+          this.handleOperator("-")
+          break;
+        case 191:
+          this.handleOperator("/")
+          break;
+        case 88:
+          this.handleOperator("*")
+          break;
+        case 187:
+          this.handleEval()
+          break;
+        case 13:
+          event.preventDefault()
+          this.handleEval()
+          break;
+        case 190:
+          this.handleDecimal(".")
+          break;
+        case 8:
+          this.handleClear()
+          break;
+      }
+    }
+  }
+
+render() {
+    return (
+      <div id="calculator">
+        <h1 id="title">JavaScript Calculator</h1>
+        <Display display={this.state.display}/>
+        <div id="controls">
+          <div class="button-row">
+            <Controls id={"clear"} display={"Clear"} 
+              handleClick={this.handleClear}/>
+            <Controls id={"add"} display={"+"} 
+              handleClick={()=>this.handleOperator("+")}/>
+          </div>
+          <div class="button-row">
+            <Controls id={"one"} display={"1"} 
+              handleClick={() => this.handleNumber("1")}/>
+            <Controls id={"two"} display={"2"} 
+              handleClick={() => this.handleNumber("2")}/>
+            <Controls id={"three"} display={"3"} 
+              handleClick={()=>this.handleNumber("3")}/>
+            <Controls id={"subtract"} display={"-"} 
+              handleClick={()=>this.handleOperator("-")}/>
+          </div>
+          <div class="button-row">
+            <Controls id={"four"} display={"4"} 
+              handleClick={()=>this.handleNumber("4")}/>
+            <Controls id={"five"} display={"5"} 
+              handleClick={()=>this.handleNumber("5")}/>
+            <Controls id={"six"} display={"6"} 
+              handleClick={()=>this.handleNumber("6")}/>
+            <Controls id={"multiply"} display={"x"} 
+              handleClick={()=>this.handleOperator("*")}/>
+          </div>
+          <div class="button-row">
+            <Controls id={"seven"} display={"7"} 
+              handleClick={()=>this.handleNumber("7")}/>
+            <Controls id={"eight"} display={"8"} 
+              handleClick={()=>this.handleNumber("8")}/>
+            <Controls id={"nine"} display={"9"} 
+              handleClick={()=>this.handleNumber("9")}/>
+            <Controls id={"divide"} display={"/"} 
+              handleClick={()=>this.handleOperator("/")}/>
+          </div>
+          <div class="button-row">
+            <Controls id={"placeholder"} display={"FCC"}/>
+            <Controls id={"zero"} display={"0"} 
+              handleClick={()=>this.handleNumber("0")}/>
+            <Controls id={"decimal"} display={"."} 
+              handleClick={()=>this.handleDecimal(".")}/>
+            <Controls id={"equals"} display={"="} 
+              handleClick={this.handleEval}/>
+          </div>
+        </div>
+      </div>
+    );
+  }
+};
+
+ReactDOM.render(<App />, document.getElementById("app"));
